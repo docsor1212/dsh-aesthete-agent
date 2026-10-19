@@ -38,6 +38,14 @@ dsh plugin --profile web add github:docsor1212/dsh-aesthete-agent
 - 引擎与技能本体:[docsor1212/aesthete-agent](https://github.com/docsor1212/aesthete-agent)(MIT)
 - 在线演示:https://docsor.cn/aesthete/
 
+## 安全声明(供安装前审查)
+
+- **零联网**:引擎为纯 Python 标准库,安装后与运行全程不发起任何网络请求;
+- **子进程**:仅调用本机 `python3`/`python` 执行随插件捆绑的引擎脚本,无其他可执行文件;
+- **无安装期脚本**:package.json 不含任何 lifecycle scripts(preinstall/postinstall 等);
+- **不读凭据**:不触碰 shell 历史、密钥、浏览器数据;
+- **写盘范围**:仅当前工作目录(directions.html / visualizer.html / *.evidence.json)。
+
 ## License
 
 MIT
