@@ -1,0 +1,46 @@
+{
+  "name": "dsh-aesthete-agent",
+  "version": "0.7.0",
+  "description": "aesthete-agent(前端美学引擎)的 DeepSeek Harness 原生插件:118 板实证配色库按语域选板、跨语域方向对比、对比度/色盲/AI味/评分四道机械检查,全部本地运行,零联网零密钥",
+  "license": "MIT",
+  "author": "docsor1212",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/docsor1212/dsh-aesthete-agent.git"
+  },
+  "homepage": "https://github.com/docsor1212/dsh-aesthete-agent#readme",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "cordis",
+    "aesthete-agent",
+    "color-palette",
+    "frontend-aesthetics",
+    "wcag"
+  ],
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./package.json": "./package.json",
+    "./cordis.patch.yml": "./cordis.patch.yml"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "README.en.md",
+    "cordis.patch.yml",
+    "lib",
+    "skills/aesthete-agent"
+  ],
+  "engines": {
+    "node": ">=22",
+    "dsh": "0.2.1-rc.2"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

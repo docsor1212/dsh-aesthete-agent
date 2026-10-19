@@ -1,0 +1,5 @@
+# dsh-aesthete-agent 配置补丁示例(用户侧 ~/.dsh/profiles/<profile>/cordis.patch.yml)
+# 当前无必填配置;引擎随插件捆绑,自动寻找本机 Python 3.8+。
+- id: dsh-aesthete-agent
+  name: dsh-aesthete-agent
+  config: {}
