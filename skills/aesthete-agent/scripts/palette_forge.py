@@ -810,16 +810,36 @@ def cmd_report(args):
     rc, out = _run("score", "--palette", ",".join(hexes))
     gates["score"] = {"pass": rc == 0, "detail": out[-160:]}
     verdict = "PASS" if all(g["pass"] for g in gates.values()) else "FAIL"
+    # 0.8.0 量化叙事:几闸过/拦下几项发现——检查的收益给数字,不只给结论
+    n_pass = sum(1 for g in gates.values() if g["pass"])
+    n_findings = 0 if verdict == "PASS" else sum(
+        1 for g in gates.values() if not g["pass"]) + len(re.findall(r"\[P[0-3]\]", gates["score"]["detail"]))
+    summary = {"gates_passed": f"{n_pass}/{len(gates)}", "issues_caught": n_findings}
     # 零模型信任闸:指纹绑定——裁决与输入摘要互锁,验收记录可对账防篡改
     fp = hashlib.sha256(("aesthete-report/v1|" + ",".join(hexes) + "|" + verdict)
                         .encode("utf-8")).hexdigest()
-    print(json.dumps({"palette": hexes, "gates": gates, "verdict": verdict, "fingerprint": fp},
+    print(json.dumps({"palette": hexes, "gates": gates, "verdict": verdict,
+                      "summary": summary, "fingerprint": fp},
                      ensure_ascii=False, indent=2))
     sys.exit(0 if verdict == "PASS" else 1)
 
 
 def palette_list(s):
     return [h for h in (x.strip() for x in s.replace("#", ",").split(",")) if h]
+
+
+def _theme_hexes(name):
+    """主题名 → hex 列表;不存在 exit 2(带可选清单)。tokens/scene/scaffold 同源。"""
+    tpath = os.path.join(os.path.dirname(os.path.abspath(LIBRARY)), "themes.json")
+    with open(tpath, encoding="utf-8") as f:
+        td = json.load(f)
+    ts = td["themes"] if isinstance(td, dict) else td
+    rec = next((t for t in ts if t.get("name_en") == name or t["name"] == name), None)
+    if rec is None:
+        print(f"主题不存在: {name}——可选: " +
+              ", ".join(t.get("name_en", t["name"]) for t in ts), file=sys.stderr)
+        sys.exit(2)
+    return [v.lstrip("#").upper() for v in rec["colors"].values()]
 
 
 def cmd_harmony(args):
@@ -1410,10 +1430,27 @@ BRIEF_KEYWORDS = {
     "pediatric_cover": ["封面", "儿童", "母婴"],
     # 前端语域(0.7.0):中文审美口语词 → 板族。"鲜艳"只指向有品位的鲜活——
     # 无品位的刺眼板带 gate 旗/踩禁词族,排序里 -4 自然沉底,不是这里豁免。
-    "frontend_soft": ["素雅", "清新", "柔和", "温柔", "淡雅", "耐看", "干净", "极简", "简洁", "轻盈"],
-    "frontend_deep": ["大气", "稳重", "高级", "质感", "商务", "沉稳", "典雅", "正式", "深沉"],
-    "frontend_bold": ["鲜艳", "活力", "年轻", "大胆", "撞色", "吸睛", "潮流", "醒目"],
-    "frontend_tech": ["科技", "科技感", "现代", "未来", "理性", "开发者", "程序员", "数据"],
+    "frontend_soft": ["素雅", "清新", "柔和", "温柔", "淡雅", "耐看", "干净", "极简", "简洁", "轻盈",
+                      "奶油", "莫兰迪", "奶油风", "治愈", "轻盈感", "温柔风",
+                      # 0.12.0 扩容
+                      "素净", "温润", "细腻", "柔美", "淡色", "舒适", "棉麻", "日式", "侘寂", "奶咖",
+                      "软糯", "松弛"],
+    "frontend_deep": ["大气", "稳重", "高级", "高级感", "质感", "商务", "沉稳", "典雅", "正式", "深沉",
+                      "轻奢", "厚重", "硬朗", "工业风", "办公",
+                      # 0.12.0 扩容
+                      "老钱风", "深邃", "暗色调", "墨色", "咖啡", "皮革", "胡桃木", "绅士", "压得住"],
+    "frontend_bold": ["鲜艳", "活力", "年轻", "大胆", "撞色", "吸睛", "潮流", "醒目",
+                      "明快", "清爽", "活泼", "元气", "有劲",
+                      # 0.12.0 扩容
+                      "多巴胺", "节庆", "欢快", "张扬", "热烈", "能量感"],
+    "frontend_tech": ["科技", "科技感", "现代", "未来", "理性", "开发者", "程序员", "数据",
+                      "极客", "赛博", "科幻", "智能",
+                      # 0.12.0 扩容
+                      "赛博朋克", "像素", "终端", "代码", "太空", "宇宙", "机甲", "霓虹"],
+    # 东方语域(0.12.0):国风/传统色审美 → 暖陶/深墨/青绿系板
+    "frontend_heritage": ["国风", "国潮", "水墨", "青绿", "敦煌", "宋韵", "禅意", "茶",
+                          "古朴", "陶土", "宣纸", "东方", "汉风", "唐风", "古风", "年画",
+                          "瓷器", "漆器"],
 }
 REGISTER_TAGS = {
     "medical_teaching": ["light", "mid", "warm", "cool", "pastel"],
@@ -1422,6 +1459,7 @@ REGISTER_TAGS = {
     "frontend_deep": ["dark", "mid", "cool", "monochromatic"],
     "frontend_bold": ["vivid", "warm", "multihue", "mid"],
     "frontend_tech": ["cool", "monochromatic", "mid", "light"],
+    "frontend_heritage": ["warm", "mid", "dark", "pastel"],
 }
 
 
@@ -1579,6 +1617,115 @@ function pick(btn){{
     print("纪律:把对比页给用户点名;用户点名后,把回传句原样作为下一步指令。")
 
 
+def cmd_check_image(args):
+    """一键图像验收(0.8.0):封面/截图 → 取色 → 四道机械检查,一条命令。
+    输出组合 JSON(image 摘要+palette+report);退出码=裁决。"""
+    if not os.path.exists(args.image):
+        print(f"文件不存在: {args.image}", file=sys.stderr)
+        sys.exit(2)
+    img_fp = hashlib.sha256(open(args.image, "rb").read()).hexdigest()
+    engine = os.path.abspath(__file__)
+
+    def _run(*a):
+        r = subprocess.run([sys.executable, engine] + list(a), capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=180)
+        return r.returncode, (r.stdout or r.stderr or "").strip()
+
+    _, ex_out = _run("extract", args.image, "--n", str(args.n))
+    hexes = re.findall(r"^#([0-9A-Fa-f]{6})", ex_out, re.M)
+    if len(hexes) < 3:
+        print(f"取色不足 3 色(需 Pillow;got {len(hexes)})", file=sys.stderr)
+        sys.exit(2)
+    rc, rep_out = _run("report", "--palette", ",".join(hexes))
+    try:
+        report = json.loads(rep_out)
+    except Exception:
+        report = {"error": rep_out[-300:]}
+    out = {"image": os.path.abspath(args.image), "image_sha256": img_fp,
+           "palette": [h.upper() for h in hexes], "report": report,
+           "verdict": report.get("verdict", "UNKNOWN")}
+    print(json.dumps(out, ensure_ascii=False, indent=2))
+    sys.exit(0 if out["verdict"] == "PASS" else 1)
+
+
+def cmd_scene(args):
+    """showcase 级单场景(0.9):把场景手艺开放为引擎能力——设备框/证据徽章/真实内容密度。
+    AI 默认紫守门:大底角色落紫 hue 域即拒绝(--force 越过留痕)。产出可作实际页面起点。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import scene_kit
+    except ImportError as e:
+        print(f"缺 scene_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    hexes = palette_list(args.palette) if args.palette else []
+    if args.theme:
+        tpath = os.path.join(os.path.dirname(os.path.abspath(LIBRARY)), "themes.json")
+        with open(tpath, encoding="utf-8") as f:
+            td = json.load(f)
+        ts = td["themes"] if isinstance(td, dict) else td
+        rec = next((t for t in ts if t.get("name_en") == args.theme or t["name"] == args.theme), None)
+        if rec is None:
+            print(f"主题不存在: {args.theme}", file=sys.stderr)
+            sys.exit(2)
+        c = rec["colors"]
+        hexes = [v.lstrip("#").upper() for v in c.values()]
+    if len(hexes) < 3:
+        print("--theme 或 --palette 必给其一(≥3 色)", file=sys.stderr)
+        sys.exit(2)
+    name = args.name or (args.theme or "palette")
+    if args.kind.lower().strip() not in scene_kit.KINDS:
+        print(f"未知场景类型: {args.kind}——可选: {', '.join(scene_kit.KINDS)}", file=sys.stderr)
+        sys.exit(2)
+    try:
+        html, declared = scene_kit.build_scene(args.kind, hexes, name,
+                                               dark=bool(args.dark), force=bool(args.force))
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
+    out = args.out or f"scene-{args.kind}.html"
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        f.write(html)
+    print(f"scene: {out} (kind={args.kind} name={name})")
+    print(f"主题色板(声明): {declared}")
+    print("下一步:作为页面起点填充,或嵌入;替换后 aesthete_report/evidence 验收")
+
+
+def cmd_scaffold(args):
+    """表现力页面骨架(0.9):主题 → 四幕明暗旅程整页(night-hero/晨坊/夜话/夜约),
+    颗粒+巨字对微字+不对称网格+滚动揭示,对比度自动调墨;替换标记就绪,替换后跑验收。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import scaffold_kit
+    except ImportError as e:
+        print(f"缺 scaffold_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    if args.theme:
+        tpath = os.path.join(os.path.dirname(os.path.abspath(LIBRARY)), "themes.json")
+        with open(tpath, encoding="utf-8") as f:
+            td = json.load(f)
+        ts = td["themes"] if isinstance(td, dict) else td
+        rec = next((t for t in ts if t.get("name_en") == args.theme or t["name"] == args.theme), None)
+        if rec is None:
+            print(f"主题不存在: {args.theme}——可选: " +
+                  ", ".join(t.get("name_en", t["name"]) for t in ts), file=sys.stderr)
+            sys.exit(2)
+        tokens = scaffold_kit.theme_tokens(rec, args.brand, args.brand_en)
+    elif args.palette:
+        tokens = scaffold_kit.derive({"hexes": palette_list(args.palette)},
+                                     args.brand or "山野手作", args.brand_en or "Studio",
+                                     args.use_when or "")
+    else:
+        print("--theme 或 --palette 必给其一", file=sys.stderr)
+        sys.exit(2)
+    html = scaffold_kit.build(tokens)
+    out = args.out or (args.brand or "scaffold").lower().replace(" ", "-") + "-page.html"
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        f.write(html)
+    print(f"scaffold: {out}")
+    print(f"主题色板(声明): {tokens['PALETTE_DECL']}")
+    print("下一步:替换『替换』标记的内容 → aesthete_report/evidence 验收")
+
+
 def cmd_evidence(args):
     """页面证据卷宗:静态 lint + 四闸 report(+可选渲染探针)合成一份 JSON + 一份人读 HTML。
     退出码 = 裁决(任一闸 FAIL 即非零)。交付前跑一次,卷宗即验收记录。"""
@@ -1645,6 +1792,211 @@ padding:12px;white-space:pre-wrap;font-size:12px}}</style></head><body>
         f.write(html)
     print(f"证据卷宗: {base}.json + {base}.html — 裁决 {ev['verdict']}")
     sys.exit(0 if ok else 1)
+
+
+def cmd_tokens(args):
+    """设计令牌表(0.9):色板/主题 → 语义 token(CSS+JSON)。
+    墨色自动调墨,accent 拆图形/文字双 token,数值注释即证据;指纹互锁。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import token_sheet
+    except ImportError as e:
+        print(f"缺 token_sheet: {e}", file=sys.stderr)
+        sys.exit(2)
+    if args.theme:
+        hexes = _theme_hexes(args.theme)
+    elif args.palette:
+        hexes = [h.upper().lstrip("#") for h in palette_list(args.palette)]
+    else:
+        print("--theme 或 --palette 必给其一(≥3 色)", file=sys.stderr)
+        sys.exit(2)
+    if len(hexes) < 3:
+        print("至少 3 色", file=sys.stderr)
+        sys.exit(2)
+    payload, rc = token_sheet.emit(
+        hexes, args.name or args.theme or "palette", args.brand or "",
+        dark=bool(args.dark), out_base=args.out or "tokens")
+    print(f"tokens: {(args.out or 'tokens')}.css + .json — 裁决 {payload['verdict']}")
+    for k, v in payload["ratios"].items():
+        print(f"  {k} = {v:.2f}:1")
+    if payload["problems"]:
+        print("未达标: " + "; ".join(payload["problems"]), file=sys.stderr)
+    print("下一步: tokens.css 供页面直接引用;交付前 aesthete_report/evidence 验收")
+    sys.exit(rc)
+
+
+def cmd_audit(args):
+    """外部页面机械审计(0.9):漂移带最近板色/对比对带达标替换值/禁渐变/紫域大底/
+    AI 默认签名;P0 存在或 P1≥2 = FAIL。静态范围如实声明(外链 CSS 用 render probe 补)。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import page_audit
+    except ImportError as e:
+        print(f"缺 page_audit: {e}", file=sys.stderr)
+        sys.exit(2)
+    if not os.path.exists(args.page):
+        print(f"文件不存在: {args.page}", file=sys.stderr)
+        sys.exit(2)
+    pal = palette_list(args.palette) if args.palette else None
+    payload = page_audit.run(args.page, pal, floor=args.floor, out_base=args.out)
+    n = payload["counts"]
+    print(f"audit: {os.path.basename(args.page)} — 裁决 {payload['verdict']} "
+          f"(P0×{n['P0']} P1×{n['P1']} P2×{n['P2']})")
+    for f in payload["findings"]:
+        print(f"[{f['sev']}] {f['msg']}")
+        print(f"      ↳ {f['fix']}")
+    if not payload["findings"]:
+        print("[OK] 未发现机械问题;视觉层(视线顺序/密度/构图)仍需五镜截图自审")
+    print(f"指纹: {payload['fingerprint'][:16]}…  范围: {payload['scope']}")
+    sys.exit(0 if payload["verdict"] != "FAIL" else 1)
+
+
+def cmd_chartpal(args):
+    """图表用色板(0.10):categorical=CVD 择优系列色 / sequential=单色相明度坡 /
+    diverging=双端-中性中点。产出 JSON+标注色样 HTML;区分度/单调性不达标 exit 1。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import chart_kit
+    except ImportError as e:
+        print(f"缺 chart_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    if args.theme:
+        hexes = _theme_hexes(args.theme)
+    elif args.palette:
+        hexes = [h.upper().lstrip("#") for h in palette_list(args.palette)]
+    else:
+        print("--theme 或 --palette 必给其一", file=sys.stderr)
+        sys.exit(2)
+    n = max(2, min(args.series, 12))
+    if args.kind == "categorical":
+        if len(hexes) < 2:
+            print("categorical 需 ≥2 候选色", file=sys.stderr)
+            sys.exit(2)
+        series, checks = chart_kit.categorical(hexes, n)
+    elif args.kind == "sequential":
+        series, checks = chart_kit.sequential(hexes[0], n, reverse=bool(args.reverse))
+    elif args.kind == "diverging":
+        if len(hexes) < 2:
+            print("diverging 需两端色(--palette 至少 2 色)", file=sys.stderr)
+            sys.exit(2)
+        series, checks = chart_kit.diverging(hexes[0], hexes[1], n)
+    else:
+        print(f"未知类型: {args.kind}", file=sys.stderr)
+        sys.exit(2)
+    payload = chart_kit.emit(args.kind, series, checks, args.name or "", args.out or "chartpal")
+    print(f"chartpal: {(args.out or 'chartpal')}.json + .html — 裁决 {payload['verdict']}")
+    print("  系列: " + " ".join("#" + h for h in series))
+    for k, v in checks.items():
+        if k != "verdict":
+            print(f"  {k} = {v}")
+    print("用色纪律: 一个主角系列给重点;直接标注数据少用图例;数字列 tabular-nums")
+    sys.exit(0 if payload["verdict"] == "PASS" else 1)
+
+
+def cmd_typescale(args):
+    """CJK 友好字阶(0.10):模块等比生成 7 级,12px 硬下限,行高配对,
+    tabular-nums 数据令牌;产出 tokens CSS + 中英混排样张 + JSON。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import type_kit
+    except ImportError as e:
+        print(f"缺 type_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    payload = type_kit.emit(args.name or "", base=args.base, ratio=args.ratio,
+                            floor=args.floor, out_base=args.out or "typescale")
+    print(f"typescale: {(args.out or 'typescale')}.css + .html + .json — 裁决 {payload['verdict']}")
+    for s in ("3xl", "2xl", "xl", "lg", "base", "sm", "xs"):
+        t = payload["tokens"][s]
+        print(f"  --text-{s}: {t['px']}px/{t['lh']} ({t['role']})")
+    if payload["checks"]["clamped_steps"]:
+        print(f"  下限钳制: {', '.join(payload['checks']['clamped_steps'])}")
+    sys.exit(0 if payload["verdict"] == "PASS" else 1)
+
+
+def cmd_qc(args):
+    """渲染对账(0.11):截图 PNG vs 声明令牌/色板——大底真伪/板外入侵。
+    渲染反馈闭环的机械闸:页面声明与实际渲染脱节(变量被覆盖/样式未加载)在此现形。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import qc_kit
+    except ImportError as e:
+        print(f"缺 qc_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    if not os.path.exists(args.image):
+        print(f"文件不存在: {args.image}", file=sys.stderr)
+        sys.exit(2)
+    declared, bg = [], None
+    if args.tokens:
+        with open(args.tokens, encoding="utf-8") as f:
+            td = json.load(f)
+        tk = td.get("tokens", td)
+        for v in tk.values():
+            if isinstance(v, str) and re.fullmatch(r"#?[0-9a-fA-F]{6}", v.strip()):
+                declared.append(v.strip().lstrip("#").upper())
+        bg = tk.get("bg")
+    elif args.palette:
+        declared = [h.upper().lstrip("#") for h in palette_list(args.palette)]
+    else:
+        print("--tokens 或 --palette 必给其一", file=sys.stderr)
+        sys.exit(2)
+    if args.bg:
+        bg = args.bg
+    if len(declared) < 2:
+        print("声明色不足 2 个", file=sys.stderr)
+        sys.exit(2)
+    payload = qc_kit.qc_image(args.image, declared, bg)
+    if args.out:
+        with open(args.out, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=1)
+    n = payload["size"]
+    print(f"qc: {os.path.basename(args.image)}({n[0]}×{n[1]}) — 裁决 {payload['verdict']}")
+    print("  主色聚类: " + "  ".join(
+        f"#{c['hex']} {c['share']*100:.0f}%" for c in payload["clusters"][:5]))
+    for f in payload["findings"]:
+        print(f"[{f['sev']}] {f['msg']}")
+        print(f"      ↳ {f['fix']}")
+    if not payload["findings"]:
+        print("[OK] 渲染实况与声明一致(聚类级);构图层仍走五镜截图自审")
+    print(f"指纹: {payload['fingerprint'][:16]}…")
+    sys.exit(0 if payload["verdict"] != "FAIL" else 1)
+
+
+def cmd_narrate(args):
+    """量化叙事(0.12):report 实测数字 → 双语说明文,数字可溯源,句式模板零发挥。
+    给"为什么这样配"一个可直接转发的答案;退出码跟 report 裁决。"""
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import narrate_kit
+    except ImportError as e:
+        print(f"缺 narrate_kit: {e}", file=sys.stderr)
+        sys.exit(2)
+    if args.theme:
+        hexes = _theme_hexes(args.theme)
+    else:
+        hexes = [h.upper().lstrip("#") for h in palette_list(args.palette or "")]
+    if len(hexes) < 3:
+        print("--theme 或 --palette 必给其一(≥3 色)", file=sys.stderr)
+        sys.exit(2)
+    rep = subprocess.run([sys.executable, os.path.abspath(__file__),
+                          "report", "--palette", ",".join(hexes)],
+                         capture_output=True, text=True)
+    _out = rep.stdout.strip()
+    _i = _out.find("{")
+    try:
+        report = json.loads(_out[_i:]) if _i >= 0 else {}
+    except Exception:
+        print(f"report 解析失败: {(_out or rep.stderr)[-300:]}", file=sys.stderr)
+        sys.exit(2)
+    roles = _viz_roles(hexes, dark=bool(getattr(args, "dark", False)))
+    body, verdict = narrate_kit.emit(report, hexes, roles, args.name or args.theme or "",
+                                     out=args.out)
+    print(body)
+    if not args.out:
+        default = (args.name or args.theme or "palette").strip().replace(" ", "-") + ".narration.md"
+        with open(default, "w", encoding="utf-8", newline="\n") as f:
+            f.write(body)
+        print(f"(已写入 {default})")
+    sys.exit(0 if verdict == "PASS" else 1)
 
 
 def cmd_card(args):
@@ -1873,12 +2225,88 @@ def main():
     s.add_argument("--out-dir", default=None)
     s.set_defaults(fn=cmd_directions)
 
+    s = sub.add_parser("scene")
+    s.add_argument("--kind", required=True,
+                   help="wallet/landing/dashboard/branding/typography/chart/ecom/email/editorial/pattern")
+    s.add_argument("--theme", help="主题包 name_en/name")
+    s.add_argument("--palette", help="逗号分隔 hex(无主题时)")
+    s.add_argument("--name", default=None, help="色板显示名(默认取主题名)")
+    s.add_argument("--dark", action="store_true")
+    s.add_argument("--force", action="store_true", help="越过 AI 默认紫守门(留痕)")
+    s.add_argument("--out", default=None, help="输出路径")
+    s.set_defaults(fn=cmd_scene)
+
+    s = sub.add_parser("scaffold")
+    s.add_argument("--theme", help="主题包 name_en/name,如 Deep Pine")
+    s.add_argument("--palette", help="逗号分隔 hex(无主题时用)")
+    s.add_argument("--brand", default=None, help="品牌名(默认取主题)")
+    s.add_argument("--brand-en", dest="brand_en", default=None)
+    s.add_argument("--use-when", dest="use_when", default="")
+    s.add_argument("--out", default=None, help="输出路径")
+    s.set_defaults(fn=cmd_scaffold)
+
+    s = sub.add_parser("check-image")
+    s.add_argument("image", help="图片路径(封面/截图)")
+    s.add_argument("--n", type=int, default=5, help="取色数,默认 5")
+    s.set_defaults(fn=cmd_check_image)
+
     s = sub.add_parser("evidence")
     s.add_argument("page", help="已完成的页面 HTML")
     s.add_argument("--palette", required=True, help="声明色板,逗号分隔 hex")
     s.add_argument("--render", default=None, help="render_probe.js 采集的 evidence.json(可选)")
     s.add_argument("--out", default=None, help="输出前缀(默认 <page>.evidence)")
     s.set_defaults(fn=cmd_evidence)
+
+    s = sub.add_parser("tokens")
+    s.add_argument("--palette", default=None, help="色板,逗号分隔 hex")
+    s.add_argument("--theme", default=None, help="主题包名(与 --palette 二选一)")
+    s.add_argument("--name", default=None, help="令牌表名(写入注释头)")
+    s.add_argument("--brand", default=None, help="品牌名(写入注释)")
+    s.add_argument("--dark", action="store_true", help="深色为主(令牌明暗互换)")
+    s.add_argument("--out", default=None, help="输出前缀(默认 tokens)")
+    s.set_defaults(fn=cmd_tokens)
+
+    s = sub.add_parser("audit")
+    s.add_argument("page", help="外部页面 HTML")
+    s.add_argument("--palette", default=None, help="声明色板(给出即查漂移)")
+    s.add_argument("--floor", type=float, default=12, help="字号下限 px")
+    s.add_argument("--out", default=None, help="JSON 输出前缀")
+    s.set_defaults(fn=cmd_audit)
+
+    s = sub.add_parser("chartpal")
+    s.add_argument("--kind", required=True,
+                   choices=["categorical", "sequential", "diverging"])
+    s.add_argument("--palette", default=None, help="候选色(分类≥2;发散=两端色)")
+    s.add_argument("--theme", default=None, help="主题包名(与 --palette 二选一)")
+    s.add_argument("--series", type=int, default=6, help="系列数(2-12)")
+    s.add_argument("--reverse", action="store_true", help="顺序板浅→深反转")
+    s.add_argument("--name", default=None)
+    s.add_argument("--out", default=None, help="输出前缀(默认 chartpal)")
+    s.set_defaults(fn=cmd_chartpal)
+
+    s = sub.add_parser("typescale")
+    s.add_argument("--base", type=float, default=16, help="正文字号 px")
+    s.add_argument("--ratio", type=float, default=1.25, help="等比(1.125-1.5)")
+    s.add_argument("--floor", type=float, default=12, help="字号硬下限 px")
+    s.add_argument("--name", default=None)
+    s.add_argument("--out", default=None, help="输出前缀(默认 typescale)")
+    s.set_defaults(fn=cmd_typescale)
+
+    s = sub.add_parser("qc")
+    s.add_argument("image", help="渲染截图 PNG")
+    s.add_argument("--tokens", default=None, help="tokens.json(令牌对账)")
+    s.add_argument("--palette", default=None, help="声明色板,逗号分隔 hex")
+    s.add_argument("--bg", default=None, help="声明大底 hex(色板模式建议显式给)")
+    s.add_argument("--out", default=None, help="JSON 输出路径")
+    s.set_defaults(fn=cmd_qc)
+
+    s = sub.add_parser("narrate")
+    s.add_argument("--palette", default=None, help="色板,逗号分隔 hex")
+    s.add_argument("--theme", default=None, help="主题包名(与 --palette 二选一)")
+    s.add_argument("--name", default=None, help="板名(写入标题)")
+    s.add_argument("--dark", action="store_true", help="按暗底推导角色")
+    s.add_argument("--out", default=None, help="输出 md 路径")
+    s.set_defaults(fn=cmd_narrate)
 
     s = sub.add_parser("card")
     s.add_argument("--palette", required=True)

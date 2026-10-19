@@ -17,6 +17,7 @@ Design (inherited from the family pattern):
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -51,6 +52,16 @@ def _tool(fn):
     if FastMCP is not None:
         return mcp.tool(fn)
     return fn
+
+
+def _mcp_version():
+    """版本单一事实源 = mcp/pyproject.toml(数字一致性:serverInfo 不再手写)。"""
+    try:
+        pp = os.path.join(_HERE, "pyproject.toml")
+        m = re.search(r'version\s*=\s*"([^"]+)"', open(pp, encoding="utf-8").read())
+        return m.group(1) if m else "0.0.0"
+    except Exception:
+        return "0.0.0"
 
 
 def palette_match_impl(brief: str, limit: int = 6, no_flags: bool = False) -> str:
@@ -177,6 +188,108 @@ def palette_evidence_impl(page: str, palette: str, render: str = "", out: str = 
     return text
 
 
+def palette_tokens_impl(palette: str = "", theme: str = "", name: str = "",
+                        dark: bool = False, out: str = "") -> str:
+    """Full semantic design-token sheet (CSS + JSON): color roles auto-tuned to
+    contrast, accent split into graphic/text variants, space/radius/motion tokens,
+    measured ratios as comments. Give `palette` (comma hex) or `theme` (pack name)."""
+    if palette:
+        args = ["tokens", "--palette", palette]
+    elif theme:
+        args = ["tokens", "--theme", theme]
+    else:
+        return "error: palette or theme required"
+    if name:
+        args += ["--name", name]
+    if dark:
+        args += ["--dark"]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
+def palette_audit_impl(page: str, palette: str = "", floor: float = 12.0, out: str = "") -> str:
+    """Mechanical audit of an EXISTING page: palette drift (nearest-library
+    replacements), gradient ban, purple-background guard, contrast pairs with
+    tuned fix values, font floor, AI-default signatures. FAIL on P0 or P1>=2."""
+    args = ["audit", page]
+    if palette:
+        args += ["--palette", palette]
+    args += ["--floor", floor]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
+def palette_chartpal_impl(kind: str, palette: str = "", theme: str = "",
+                          series: int = 6, out: str = "") -> str:
+    """Chart palette derivation: categorical (CVD-optimized series colors),
+    sequential (single-hue lightness ramp) or diverging (two hues, neutral
+    midpoint). Emits JSON + annotated swatch HTML; exit reflects verdict."""
+    args = ["chartpal", "--kind", kind]
+    if palette:
+        args += ["--palette", palette]
+    elif theme:
+        args += ["--theme", theme]
+    args += ["--series", series]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
+def palette_typescale_impl(base: float = 16.0, ratio: float = 1.25,
+                           name: str = "", out: str = "") -> str:
+    """CJK-friendly modular type scale (12px floor, line-height pairing,
+    tabular-nums token) as CSS + specimen HTML + JSON."""
+    args = ["typescale", "--base", base, "--ratio", ratio]
+    if name:
+        args += ["--name", name]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
+def palette_qc_impl(image: str, tokens: str = "", palette: str = "",
+                    bg: str = "", out: str = "") -> str:
+    """Reconcile a rendered screenshot against declared tokens/palette:
+    background authenticity and off-palette intrusions, digest-bound JSON.
+    The mechanical gate of the render feedback loop."""
+    args = ["qc", image]
+    if tokens:
+        args += ["--tokens", tokens]
+    elif palette:
+        args += ["--palette", palette]
+    if bg:
+        args += ["--bg", bg]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
+def palette_narrate_impl(palette: str = "", theme: str = "",
+                         name: str = "", out: str = "") -> str:
+    """Measured-numbers-only bilingual rationale from the report gates
+    (contrast pair, blind sims, slop scan, score, fingerprint) — every number
+    traceable, template sentences, zero invented claims."""
+    if palette:
+        args = ["narrate", "--palette", palette]
+    elif theme:
+        args = ["narrate", "--theme", theme]
+    else:
+        return "error: palette or theme required"
+    if name:
+        args += ["--name", name]
+    if out:
+        args += ["--out", out]
+    ok, text = _call_engine(args)
+    return text
+
+
 if FastMCP is not None:
     mcp = FastMCP("aesthete-agent")
 
@@ -195,6 +308,12 @@ if FastMCP is not None:
     _tool(palette_report_impl)
     _tool(palette_directions_impl)
     _tool(palette_evidence_impl)
+    _tool(palette_tokens_impl)
+    _tool(palette_audit_impl)
+    _tool(palette_chartpal_impl)
+    _tool(palette_typescale_impl)
+    _tool(palette_qc_impl)
+    _tool(palette_narrate_impl)
 
 
 
@@ -231,6 +350,24 @@ _STDIO_TOOLS = [
     ("palette_evidence", "Evidence dossier: 4 gates + lint (+render probe) for a finished page",
      {"page": {"type": "string"}, "palette": {"type": "string"}, "render": {"type": "string"},
       "out": {"type": "string"}}, ["page", "palette"]),
+    ("palette_tokens", "Semantic design-token sheet (CSS+JSON) with contrast-tuned inks",
+     {"palette": {"type": "string"}, "theme": {"type": "string"}, "name": {"type": "string"},
+      "dark": {"type": "boolean"}, "out": {"type": "string"}}, []),
+    ("palette_audit", "Mechanical audit of an existing page with concrete fix values",
+     {"page": {"type": "string"}, "palette": {"type": "string"}, "floor": {"type": "number"},
+      "out": {"type": "string"}}, ["page"]),
+    ("palette_chartpal", "Chart palette: CVD-checked categorical / sequential / diverging",
+     {"kind": {"type": "string"}, "palette": {"type": "string"}, "theme": {"type": "string"},
+      "series": {"type": "number"}, "out": {"type": "string"}}, ["kind"]),
+    ("palette_typescale", "CJK-friendly modular type scale (CSS + specimen)",
+     {"base": {"type": "number"}, "ratio": {"type": "number"}, "name": {"type": "string"},
+      "out": {"type": "string"}}, []),
+    ("palette_qc", "Reconcile rendered screenshot vs declared tokens (bg truth / intruders)",
+     {"image": {"type": "string"}, "tokens": {"type": "string"}, "palette": {"type": "string"},
+      "bg": {"type": "string"}, "out": {"type": "string"}}, ["image"]),
+    ("palette_narrate", "Bilingual measured-numbers rationale from report gates",
+     {"palette": {"type": "string"}, "theme": {"type": "string"}, "name": {"type": "string"},
+      "out": {"type": "string"}}, []),
 ]
 
 
@@ -254,6 +391,22 @@ def _stdio_serve():
             a.get("brief", ""), a.get("registers", ""), int(a.get("n", 3)), a.get("out_dir", "directions")),
         "palette_evidence": lambda a: palette_evidence_impl(
             a.get("page", ""), a.get("palette", ""), a.get("render", ""), a.get("out", "")),
+        "palette_tokens": lambda a: palette_tokens_impl(
+            a.get("palette", ""), a.get("theme", ""), a.get("name", ""),
+            bool(a.get("dark", False)), a.get("out", "")),
+        "palette_audit": lambda a: palette_audit_impl(
+            a.get("page", ""), a.get("palette", ""), float(a.get("floor", 12.0)), a.get("out", "")),
+        "palette_chartpal": lambda a: palette_chartpal_impl(
+            a.get("kind", "categorical"), a.get("palette", ""), a.get("theme", ""),
+            int(a.get("series", 6)), a.get("out", "")),
+        "palette_typescale": lambda a: palette_typescale_impl(
+            float(a.get("base", 16.0)), float(a.get("ratio", 1.25)),
+            a.get("name", ""), a.get("out", "")),
+        "palette_qc": lambda a: palette_qc_impl(
+            a.get("image", ""), a.get("tokens", ""), a.get("palette", ""),
+            a.get("bg", ""), a.get("out", "")),
+        "palette_narrate": lambda a: palette_narrate_impl(
+            a.get("palette", ""), a.get("theme", ""), a.get("name", ""), a.get("out", "")),
     }
     tools = [{"name": n, "description": (d.strip() if d else n),
               "inputSchema": {"type": "object", "properties": props, "required": req}}
@@ -281,7 +434,7 @@ def _stdio_serve():
         if method == "initialize":
             respond(mid, {"protocolVersion": msg.get("params", {}).get("protocolVersion", "2025-06-18"),
                           "capabilities": {"tools": {}},
-                          "serverInfo": {"name": "aesthete-agent-mcp", "version": "0.7.0"}})
+                          "serverInfo": {"name": "aesthete-agent-mcp", "version": _mcp_version()}})
         elif method == "notifications/initialized" or mid is None:
             continue
         elif method == "ping":
@@ -311,7 +464,8 @@ def main(argv=None):
     if a.check:
         ok, text = _call_engine(["selftest"])
         print("engine selftest:", "OK" if ok else "FAIL")
-        print("tools exposed:", 15 if FastMCP is not None else 0, "(fastmcp",
+        n = len(_STDIO_TOOLS) if FastMCP is not None else 0
+        print("tools exposed:", n, "(fastmcp",
               "available)" if FastMCP is not None else "NOT installed — impl-only mode)")
         return 0 if ok else 1
     if FastMCP is None or a.stdio:

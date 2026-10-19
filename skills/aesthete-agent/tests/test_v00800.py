@@ -103,6 +103,34 @@ class TestScaffold(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
 
 
+class TestScene(unittest.TestCase):
+    PAL = "01161E,EFF6E0,124559,AEC3B0,52636E"
+
+    def test_scene_wallet_end_to_end(self):
+        out = os.path.join(TMP, "scene-wallet.html")
+        r = run([ENGINE, "scene", "--kind", "wallet", "--theme", "Deep Pine",
+                 "--palette", self.PAL, "--out", out])
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        html = io.open(out, encoding="utf-8").read()
+        self.assertIn("p-balance", html)          # 钱包场景结构
+        self.assertNotIn("linear-gradient", html)  # 零渐变
+        pal = re.search(r"主题色板\(声明\): ([0-9A-F,]+)", r.stdout).group(1)
+        lint = run([os.path.join(ROOT, "scripts", "lint_page.py"), out,
+                    "--palette", pal, "--floor", "9"])   # 设备 mockup 微字豁免
+        self.assertEqual(lint.returncode, 0, lint.stdout)
+
+    def test_scene_purple_guard(self):
+        out = os.path.join(TMP, "scene-purple.html")
+        r = run([ENGINE, "scene", "--kind", "landing", "--palette",
+                 "7C3AED,A855F7,DDD6FE,1E1B4B", "--out", out])
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("AI 默认紫守门", r.stderr)
+
+    def test_scene_unknown_kind(self):
+        r = run([ENGINE, "scene", "--kind", "nope", "--palette", "555B6E,89B0AE,BEE3DB"])
+        self.assertEqual(r.returncode, 2)
+
+
 class TestQuantifiedVerdict(unittest.TestCase):
     def test_fail_summary_counts_findings(self):
         r = run([ENGINE, "report", "--palette", "8B5CF6,A855F7,7C3AED"])

@@ -1,5 +1,5 @@
 ---
-version: 0.7.2
+version: 0.11.0
 name: aesthete-agent
 description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻灯片、视频封面、图表、海报输出机械验证过的颜色方案。118 板实证库按语域自动匹配,OKLCH 谐和生成、明度阶梯、图像取色;60-30-10 角色化含语义色;五维评分卡、WCAG 对比度、色盲模拟、AI-slop 检测四重机械验证;card 上下文预览+六场景 visualizer+五镜自审;偏好学习档案随你的每次裁决进化。内置命名主题包、全对对比度矩阵、色盲安全数据色、五镜报告生成器与 APCA(WCAG 3 草案)感知对比度。纯标准库离线可用。Skip when:纯文字排版、翻译润色、文案写作、与配色和前端美学无关的任务。Aesthete Agent。触发词:配色、调色板、配色方案、颜色搭配、前端美学、UI配色、设计美学、color palette、color scheme、WCAG、色盲、视觉审美、visualizer、aesthete-agent。
 ---
@@ -34,11 +34,18 @@ description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻
 | 验收 report | 一键 `report` 把对比度/色盲/AI-slop/评分四闸聚合成单一 PASS/FAIL JSON(退出码=裁决),直通裁决回写 | 不替代审美判断——五镜截图仍必做 | critique.md |
 | 预览 card / showcase / make_variants | 色板卡+mockup;样张点名;≥2 候选对比页 | 不替代真实环境冒烟测试 | critique.md |
 | directions 跨语域方向对比 | 不同语域族整页候选并排,差异铁律(色板不同+标签差≥2),每方向带元数据与选择回传句 | 不替用户裁决——点名权在用户 | curation.md |
+| scene showcase 级场景 | `scene --kind wallet/landing/dashboard… --theme` 产出 showcase 手艺的单场景(设备框+证据徽章)作页面起点;内置 AI 默认紫守门 | 场景是起点不是终点——扩展后过闸 | design-techniques.md |
 | design-techniques 表现力技法库 | 10 条可组合惊艳技法(颗粒 hero/幽灵序号/跑马灯/粘性堆叠/双色调/非对称网格/悬停揭示…),每条带完整代码;每页挑 3-5 条自由构图 | 构图仍受全机械闸验收 | design-techniques.md |
 | scaffold 页面骨架 | `scaffold --theme` 一键产出四幕表现力整页骨架(自动调墨/颗粒/揭示),替换标记内容后过闸即可交付 | 骨架是工艺,内容是你的 | expressive-design.md |
 | expressive 表现力语法(惊艳) | 明暗旅程/巨字对微字/颗粒质感/滚动揭示/唯一签名——把过闸变成被记住;仍受全机械闸约束 | expressive-design.md |
 | check-image 一键图片验收 | 封面/截图一条命令出色板+四道检查裁决(指纹绑定 JSON) | 只判颜色不判构图 | curation.md |
 | evidence 证据卷宗 | 四道机械闸+静态审计(+可选渲染探针)合成一份 PASS/FAIL JSON 与人读验收记录,退出码=裁决 | 是证据不是审美——五镜截图仍要跑 | critique.md |
+| tokens 设计令牌表 | `tokens --palette/--theme` 产出全套语义令牌(CSS+JSON):墨色自动调墨,accent 拆图形/文字双档,间距/圆角/动效一并发出,注释即实测对比度 | 令牌是派生的不是钦定的——接线后仍要 report 验收 | curation.md |
+| audit 外部页面审计 | `audit page.html --palette` 给已有页面做机械体检:漂移带最近板色替换/禁渐变/紫域大底/对比对带达标修复值/字号下限/AI 默认签名 | 静态范围——外链 CSS 与浏览器实测用渲染探针/evidence 补 | critique.md |
+| chartpal 图表色板 | `chartpal --kind categorical/sequential/diverging` 派生图表用色:三色盲模拟区分度下界/单调明度坡/近中性中点,产出标注色样 HTML+JSON | 有序数据用坡不用分类色;超 6 系列先分组 | data-viz.md |
+| typescale 字阶 | `typescale --base 16 --ratio 1.25` 产出 CJK 友好模块字阶(12px 硬下限/行高配对/tabular-nums 令牌)=CSS+中英混排样张 | 被钳制的级别如实报告;字阶为层级服务 | cjk-typography.md |
+| qc 渲染对账 | `qc shot.png --tokens tokens.json` 把渲染像素对声明令牌机械对账:大底真伪/板外入侵(带面积份额)/指纹绑定裁决——渲染反馈闭环的机械闸 | 静态检查看不见渲染;声明≠实况直到被证明 | render-loop.md |
+| narrate 量化叙事 | `narrate --palette/--theme` 把 report 实测闸门(对比对/色盲模拟/slop 扫描/评分/指纹)转成双语纯数字说明,可直接转发 | 每个数字都可溯源到 report;模板不加形容词 | critique.md |
 | Visualizer 场景+变体+SVG 重着色 | 10 类真实场景(手机应用/落地页/仪表盘/品牌/字阶/图案/数据图表/商品卡/邮件/编辑页),角色派生+可读性闸门+文字阶梯;--variants N 同场景×N 次色板排列;SVG 槽位清单重着色(按设计自身颜色秩映射,纯黑白保留),--shuffle N 出多排列对比网格 | 场景样张是决策辅助,不是生产 UI | critique.md |
 | 学习 house + profile.json | 已验收设计入库;偏好(深浅/黑名单/语域)机读生效 | 学习档案即配置文件,改法见"裁决回写"节 | curation.md |
 
