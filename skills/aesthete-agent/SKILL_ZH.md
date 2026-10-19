@@ -1,5 +1,5 @@
 ---
-version: 0.6.1
+version: 0.7.2
 name: aesthete-agent
 description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻灯片、视频封面、图表、海报输出机械验证过的颜色方案。118 板实证库按语域自动匹配,OKLCH 谐和生成、明度阶梯、图像取色;60-30-10 角色化含语义色;五维评分卡、WCAG 对比度、色盲模拟、AI-slop 检测四重机械验证;card 上下文预览+六场景 visualizer+五镜自审;偏好学习档案随你的每次裁决进化。内置命名主题包、全对对比度矩阵、色盲安全数据色、五镜报告生成器与 APCA(WCAG 3 草案)感知对比度。纯标准库离线可用。Skip when:纯文字排版、翻译润色、文案写作、与配色和前端美学无关的任务。Aesthete Agent。触发词:配色、调色板、配色方案、颜色搭配、前端美学、UI配色、设计美学、color palette、color scheme、WCAG、色盲、视觉审美、visualizer、aesthete-agent。
 ---
@@ -34,6 +34,10 @@ description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻
 | 验收 report | 一键 `report` 把对比度/色盲/AI-slop/评分四闸聚合成单一 PASS/FAIL JSON(退出码=裁决),直通裁决回写 | 不替代审美判断——五镜截图仍必做 | critique.md |
 | 预览 card / showcase / make_variants | 色板卡+mockup;样张点名;≥2 候选对比页 | 不替代真实环境冒烟测试 | critique.md |
 | directions 跨语域方向对比 | 不同语域族整页候选并排,差异铁律(色板不同+标签差≥2),每方向带元数据与选择回传句 | 不替用户裁决——点名权在用户 | curation.md |
+| design-techniques 表现力技法库 | 10 条可组合惊艳技法(颗粒 hero/幽灵序号/跑马灯/粘性堆叠/双色调/非对称网格/悬停揭示…),每条带完整代码;每页挑 3-5 条自由构图 | 构图仍受全机械闸验收 | design-techniques.md |
+| scaffold 页面骨架 | `scaffold --theme` 一键产出四幕表现力整页骨架(自动调墨/颗粒/揭示),替换标记内容后过闸即可交付 | 骨架是工艺,内容是你的 | expressive-design.md |
+| expressive 表现力语法(惊艳) | 明暗旅程/巨字对微字/颗粒质感/滚动揭示/唯一签名——把过闸变成被记住;仍受全机械闸约束 | expressive-design.md |
+| check-image 一键图片验收 | 封面/截图一条命令出色板+四道检查裁决(指纹绑定 JSON) | 只判颜色不判构图 | curation.md |
 | evidence 证据卷宗 | 四道机械闸+静态审计(+可选渲染探针)合成一份 PASS/FAIL JSON 与人读验收记录,退出码=裁决 | 是证据不是审美——五镜截图仍要跑 | critique.md |
 | Visualizer 场景+变体+SVG 重着色 | 10 类真实场景(手机应用/落地页/仪表盘/品牌/字阶/图案/数据图表/商品卡/邮件/编辑页),角色派生+可读性闸门+文字阶梯;--variants N 同场景×N 次色板排列;SVG 槽位清单重着色(按设计自身颜色秩映射,纯黑白保留),--shuffle N 出多排列对比网格 | 场景样张是决策辅助,不是生产 UI | critique.md |
 | 学习 house + profile.json | 已验收设计入库;偏好(深浅/黑名单/语域)机读生效 | 学习档案即配置文件,改法见"裁决回写"节 | curation.md |
