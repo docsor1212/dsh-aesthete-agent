@@ -1,6 +1,6 @@
 {
   "name": "dsh-aesthete-agent",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "aesthete-agent(前端美学引擎)的 DeepSeek Harness 原生插件:118 板实证配色库按语域选板、跨语域方向对比、对比度/色盲/AI味/评分四道机械检查,全部本地运行,零联网零密钥",
   "license": "MIT",
   "author": "docsor1212",
