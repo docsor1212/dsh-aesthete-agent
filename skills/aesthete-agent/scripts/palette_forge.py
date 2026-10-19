@@ -22,6 +22,7 @@ for color-blindness simulation (approximate, severity 1.0).
 """
 import argparse
 import colorsys
+import hashlib
 import json
 import math
 import os
@@ -809,7 +810,10 @@ def cmd_report(args):
     rc, out = _run("score", "--palette", ",".join(hexes))
     gates["score"] = {"pass": rc == 0, "detail": out[-160:]}
     verdict = "PASS" if all(g["pass"] for g in gates.values()) else "FAIL"
-    print(json.dumps({"palette": hexes, "gates": gates, "verdict": verdict},
+    # 零模型信任闸:指纹绑定——裁决与输入摘要互锁,验收记录可对账防篡改
+    fp = hashlib.sha256(("aesthete-report/v1|" + ",".join(hexes) + "|" + verdict)
+                        .encode("utf-8")).hexdigest()
+    print(json.dumps({"palette": hexes, "gates": gates, "verdict": verdict, "fingerprint": fp},
                      ensure_ascii=False, indent=2))
     sys.exit(0 if verdict == "PASS" else 1)
 
@@ -1607,6 +1611,12 @@ def cmd_evidence(args):
     rj = ev.get("report") or {}
     verdict = rj.get("verdict", "FAIL" if rj.get("error") else "UNKNOWN")
     ev["verdict"] = "PASS" if (verdict == "PASS" and lint.returncode == 0) else "FAIL"
+    # 零模型信任闸:页面字节+声明色板+裁决 摘要互锁,验收记录可对账防篡改
+    page_fp = hashlib.sha256(open(page, "rb").read()).hexdigest()
+    ev["fingerprint"] = hashlib.sha256(
+        ("aesthete-evidence/v1|" + ",".join(hexes) + "|" + page_fp + "|" + ev["verdict"])
+        .encode("utf-8")).hexdigest()
+    ev["page_sha256"] = page_fp
     base = args.out or (os.path.splitext(page)[0] + ".evidence")
     with open(base + ".json", "w", encoding="utf-8") as f:
         json.dump(ev, f, ensure_ascii=False, indent=1)
