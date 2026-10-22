@@ -56,7 +56,7 @@ class TestThemes(unittest.TestCase):
     def test_ten_themes_with_new_packs(self):
         d = json.load(open(os.path.join(ROOT, "palettes", "themes.json"), encoding="utf-8"))
         themes = d["themes"] if isinstance(d, dict) else d
-        self.assertGreaterEqual(len(themes), 10)
+        self.assertGreaterEqual(len(themes), 11)
         names_en = {t.get("name_en") for t in themes}
         self.assertIn("Deep Pine", names_en)      # 用户点名板升主题包
         self.assertIn("Morning Pastel", names_en)  # 素雅标杆升主题包
@@ -86,6 +86,7 @@ class TestScaffold(unittest.TestCase):
     def test_scaffold_theme_end_to_end(self):
         out = os.path.join(TMP, "scaffold-test.html")
         r = run([ENGINE, "scaffold", "--theme", "Deep Pine",
+                 "--recipe", "DARK-FOUR-ACT",
                  "--brand", "测试木作", "--out", out])
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertTrue(os.path.exists(out))

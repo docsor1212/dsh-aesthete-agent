@@ -1,7 +1,7 @@
 ---
-version: 0.11.0
+version: 0.15.0
 name: aesthete-agent
-description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻灯片、视频封面、图表、海报输出机械验证过的颜色方案。118 板实证库按语域自动匹配,OKLCH 谐和生成、明度阶梯、图像取色;60-30-10 角色化含语义色;五维评分卡、WCAG 对比度、色盲模拟、AI-slop 检测四重机械验证;card 上下文预览+六场景 visualizer+五镜自审;偏好学习档案随你的每次裁决进化。内置命名主题包、全对对比度矩阵、色盲安全数据色、五镜报告生成器与 APCA(WCAG 3 草案)感知对比度。纯标准库离线可用。Skip when:纯文字排版、翻译润色、文案写作、与配色和前端美学无关的任务。Aesthete Agent。触发词:配色、调色板、配色方案、颜色搭配、前端美学、UI配色、设计美学、color palette、color scheme、WCAG、色盲、视觉审美、visualizer、aesthete-agent。
+description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻灯片、视频封面、图表、海报输出机械验证过的颜色方案。119 板实证库按语域自动匹配,OKLCH 谐和生成、明度阶梯、图像取色;60-30-10 角色化含语义色;五维评分卡、WCAG 对比度、色盲模拟、AI-slop 检测四重机械验证;card 上下文预览+六场景 visualizer+五镜自审;偏好学习档案随你的每次裁决进化。内置命名主题包、全对对比度矩阵、色盲安全数据色、五镜报告生成器与 APCA(WCAG 3 草案)感知对比度。纯标准库离线可用。Skip when:纯文字排版、翻译润色、文案写作、与配色和前端美学无关的任务。Aesthete Agent。触发词:配色、调色板、配色方案、颜色搭配、前端美学、UI配色、设计美学、color palette、color scheme、WCAG、色盲、视觉审美、visualizer、aesthete-agent。
 ---
 
 # aesthete-agent — 前端美学引擎
@@ -20,7 +20,7 @@ description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻
 
 | 能力 | 做到 | 不做到 | 深入 |
 |---|---|---|---|
-| 选库 match/search | 按语域+点赞分层+客观门从 118 板实证库排序 | 不判"主观好看"——最终裁决在上下文自审 | curation.md |
+| 选库 match/search | 按语域+点赞分层+客观门从 119 板实证库排序 | 不判"主观好看"——最终裁决在上下文自审 | curation.md |
 | 生成 harmony / ramp / mutate | OKLCH 谐和/明度阶梯/感知等量变换,自动 gamut 收缩 | 不做插图/渐变图导出 | color-theory.md |
 | 取色 extract | 从参考图提取主色+占比+文字色建议 | 不做图像重绘/抠图 | — |
 | 角色 roles | bg/text/accent/primary/surface+语义色,附对比度检查 | 不替代排版系统与字体选型 | craft-rules.md |
@@ -45,7 +45,12 @@ description: 配色生成、调色板方案、前端美学:为 UI/HTML、SVG 幻
 | chartpal 图表色板 | `chartpal --kind categorical/sequential/diverging` 派生图表用色:三色盲模拟区分度下界/单调明度坡/近中性中点,产出标注色样 HTML+JSON | 有序数据用坡不用分类色;超 6 系列先分组 | data-viz.md |
 | typescale 字阶 | `typescale --base 16 --ratio 1.25` 产出 CJK 友好模块字阶(12px 硬下限/行高配对/tabular-nums 令牌)=CSS+中英混排样张 | 被钳制的级别如实报告;字阶为层级服务 | cjk-typography.md |
 | qc 渲染对账 | `qc shot.png --tokens tokens.json` 把渲染像素对声明令牌机械对账:大底真伪/板外入侵(带面积份额)/指纹绑定裁决——渲染反馈闭环的机械闸 | 静态检查看不见渲染;声明≠实况直到被证明 | render-loop.md |
+| typography 排印体系 | `references/typography-system.md` — 中西文 display 级排印法则:排印底座一行生效/字距字号律/行高对比律/眉题·巨标·导语配方/可变字体加载纪律/数字排印;`typescale --fluid` 出流体字阶+排印底座 CSS | 规则即代码不是散文;渐进项自动降级 | cjk-typography.md |
+| layout 布局组合 | `references/layout-composition.md` — 12 列底座/跨度词汇表(连续禁重复·4+4+4 每页一次)/不对称三比 7:5·8:4·5:8/间距三级 96-64-40/明暗逐幕翻转/装饰剂量上限;`scaffold --recipe` 一键产出五套参数化整页(EDIT-SPLIT/BLUEPRINT/SWISS-POSTER/EDITORIAL-MAG/DARK-FOUR-ACT) | 配方是起点——替换内容后过闸 | layout-composition.md |
 | narrate 量化叙事 | `narrate --palette/--theme` 把 report 实测闸门(对比对/色盲模拟/slop 扫描/评分/指纹)转成双语纯数字说明,可直接转发 | 每个数字都可溯源到 report;模板不加形容词 | critique.md |
+| exemplar 范例注入 | `exemplar --kind landing --register light` 检索一份渲染评审+过闸的范例页(五配方×五色板,头部带 kind/register 元数据),按"色值换令牌、内容换真实"规则模仿改造 | 范例教的是结构与剂量;检索零命中显式报错,绝不猜 | layout-composition.md |
+| patch 定点修改 | `patch page.html --palette ... [--apply]` 把审计结果变成字面替换对(脏色大底 tint/字号下限/中文负字距/对比对);--apply 字节级备份 .bak 后直修并复检 | 字面补丁只在原文真实存在处生效——其余一律降级 manual 指引 | render-loop.md |
+| loop 渲染闭环清单 | `loop page.html --palette ...` 产出可执行评审闭环:渲染前机械预检、整视口逐屏截图三铁律、qc 对账命令、五镜自审、停止条件(最多 5 轮) | 闸门绿≠完成;闭环是工作单元,不是单次渲染 | render-loop.md |
 | Visualizer 场景+变体+SVG 重着色 | 10 类真实场景(手机应用/落地页/仪表盘/品牌/字阶/图案/数据图表/商品卡/邮件/编辑页),角色派生+可读性闸门+文字阶梯;--variants N 同场景×N 次色板排列;SVG 槽位清单重着色(按设计自身颜色秩映射,纯黑白保留),--shuffle N 出多排列对比网格 | 场景样张是决策辅助,不是生产 UI | critique.md |
 | 学习 house + profile.json | 已验收设计入库;偏好(深浅/黑名单/语域)机读生效 | 学习档案即配置文件,改法见"裁决回写"节 | curation.md |
 
